@@ -127,8 +127,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Firefly
   phase: 0
   naturalFrequency: 0
-  couplingStrength: 2
-  visionRadius: 5
+  couplingStrength: 3
+  visionRadius: 10
   flashColor: {r: 0.6, g: 1, b: 0.2, a: 1}
   flashIntensity: 4
   fadeSpeed: 3
