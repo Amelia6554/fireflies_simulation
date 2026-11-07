@@ -581,6 +581,8 @@ GameObject:
   - component: {fileID: 826844673}
   - component: {fileID: 826844672}
   - component: {fileID: 826844674}
+  - component: {fileID: 826844676}
+  - component: {fileID: 826844675}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -630,6 +632,36 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FpsDisplay
   FpsCounter: {fileID: 912033499}
+--- !u!114 &826844675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 826844671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bc2a925b9ab64f2f9041bc9edf42f05e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FireflySpawner
+  fireflyPrefab: {fileID: 5644159355279596319, guid: dbb9bfe47d5b48b7da35331d1f8aa777, type: 3}
+  populationSize: 100
+  spawnRadius: 10
+--- !u!114 &826844676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 826844671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aafbb6ca419345aca7ae5e00bb61f7d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimulationManager
+  couplingStrenghth: 2
+  visionRadius: 2
+  allFireflies: []
 --- !u!1 &912033497
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,53 +799,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 912033497}
   m_CullTransparentMesh: 1
---- !u!1 &1048816390
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1048816391}
-  - component: {fileID: 1048816392}
-  m_Layer: 0
-  m_Name: Spawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1048816391
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048816390}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.09399, y: -0, z: -5.91852}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1048816392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1048816390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bc2a925b9ab64f2f9041bc9edf42f05e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FireflySpawner
-  fireflyPrefab: {fileID: 5644159355279596319, guid: dbb9bfe47d5b48b7da35331d1f8aa777, type: 3}
-  populationSize: 200
-  spawnRadius: 20
 --- !u!1 &1380178242
 GameObject:
   m_ObjectHideFlags: 0
@@ -1036,7 +1021,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 330585546}
   - {fileID: 410087041}
-  - {fileID: 1048816391}
   - {fileID: 1935172262}
   - {fileID: 826844673}
   - {fileID: 546190693}
