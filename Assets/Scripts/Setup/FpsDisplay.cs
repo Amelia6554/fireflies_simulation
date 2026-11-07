@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class FpsDisplay : MonoBehaviour
 {
-    private float fps;
+    private int fps;
     public TMPro.TextMeshProUGUI FpsCounter;
     void Start()
     {
@@ -11,7 +11,7 @@ public class FpsDisplay : MonoBehaviour
 
     void GetFps()
     {
-        fps =  1.0f / Time.deltaTime;
+        fps = (int)( 1.0f / Time.deltaTime);
         FpsCounter.text = "FPS: " + fps.ToString("F2");
         
     }

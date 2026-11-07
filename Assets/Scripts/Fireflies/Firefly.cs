@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Firefly : MonoBehaviour
@@ -5,9 +6,6 @@ public class Firefly : MonoBehaviour
     [Header("Clock Parameters")] public float phase = 0f;
     public float naturalFrequency;
 
-    [Header("Kuramoto Parameters")] public float couplingStrength = 2.0f;
-    public float visionRadius = 5.0f;
-    
     [Header("Visuals (Fading and Bloom")]
     public Color flashColor = new Color(0.6f, 1.0f, 0.2f, 1f);
 
@@ -16,6 +14,7 @@ public class Firefly : MonoBehaviour
     
     private Material fireflyMaterial;
     private Color currentColor;
+    private float phaseCorrection = 0f;
 
     void Start()
     {
@@ -32,34 +31,38 @@ public class Firefly : MonoBehaviour
         currentColor = Color.black;
     }
 
-    void Update()
+    public void CalculateKuramoto(List<Firefly> neighbors)
     {
-        float phaseCorrection = 0f;
-        int neighborsCount = 0;
+        phaseCorrection = 0f;
+        int validNeighbors = 0;
 
-        foreach (Firefly neighbour in FireflySpawner.allFireflies)
+        float k = SimulationManager.instance.couplingStrenghth;
+        float radius = SimulationManager.instance.visionRadius;
+
+        foreach (Firefly neighbor in neighbors)
         {
-            if(neighbour == this) continue;
-            
-            float distance = Vector3.Distance(transform.position, neighbour.transform.position);
+           if (neighbor == this) continue;
 
-            if (distance <= visionRadius)
-            {
-                phaseCorrection += Mathf.Sin(neighbour.phase - this.phase);
-                neighborsCount++;
-            }
+           if (Vector3.Distance(transform.position, neighbor.transform.position) <= radius)
+           {
+               phaseCorrection += Mathf.Sin(neighbor.phase - this.phase);
+               validNeighbors++;
+           }
         }
 
-        if (neighborsCount > 0)
+        if (validNeighbors > 0)
         {
-            phaseCorrection = (couplingStrength / neighborsCount) * phaseCorrection;
+            phaseCorrection = (k / validNeighbors) * phaseCorrection;
         }
-        
+    }
+
+    public void UpdatePhaseAndVisuals()
+    {
         phase += (naturalFrequency + phaseCorrection) * Time.deltaTime;
 
-        if (phase > 2f * Mathf.PI)
+        if (phase >= 2f * Mathf.PI)
         {
-            Flash();
+            currentColor = flashColor * flashIntensity;
             phase -= 2f * Mathf.PI;
         }
 
@@ -68,11 +71,6 @@ public class Firefly : MonoBehaviour
             currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * Time.deltaTime);
             fireflyMaterial.SetColor("_EmissionColor", currentColor);
         }
-    }
-    
-    void Flash()
-    {
-        currentColor = flashColor * flashIntensity;
     }
 
 }
