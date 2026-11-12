@@ -5,15 +5,18 @@ using Random = UnityEngine.Random;
 
 public class Firefly : MonoBehaviour
 {
-    [Header("Clock Parameters")] public float phase = 0f;
+    [Header("Clock Parameters")]
+    public float phase = 0f;
     public float naturalFrequency;
 
-    [Header("Visuals (Fading and Bloom")]
+    [Header("Visuals (Fading and Bloom)")]
     public Color flashColor = new Color(0.6f, 1.0f, 0.2f, 1f);
-
     public float flashIntensity = 4.0f;
     public float fadeSpeed = 3.0f;
-    
+
+    [Tooltip("Numer slotu w Mesh Renderer, na którym jest ¿ó³ty materia³")]
+    public int glowMaterialIndex = 0;
+
     private static MaterialPropertyBlock propBlock;
     private Renderer meshRenderer;
     private Color currentColor;
@@ -21,8 +24,9 @@ public class Firefly : MonoBehaviour
 
     private void Awake()
     {
-        meshRenderer =  GetComponent<Renderer>();
-        if (propBlock != null)
+        meshRenderer = GetComponentInChildren<Renderer>();
+
+        if (propBlock == null)
         {
             propBlock = new MaterialPropertyBlock();
         }
@@ -32,7 +36,7 @@ public class Firefly : MonoBehaviour
     {
         phase = Random.Range(0f, 2f * Mathf.PI);
         naturalFrequency = Random.Range(0.9f, 1.1f);
-        
+
         currentColor = Color.black;
     }
 
@@ -47,13 +51,13 @@ public class Firefly : MonoBehaviour
 
         foreach (Firefly neighbor in neighbors)
         {
-           if (neighbor == this) continue;
+            if (neighbor == this) continue;
 
-           if ((transform.position - neighbor.transform.position).sqrMagnitude <= readiusQuared)
-           {
-               phaseCorrection += Mathf.Sin(neighbor.phase - this.phase);
-               validNeighbors++;
-           }
+            if ((transform.position - neighbor.transform.position).sqrMagnitude <= readiusQuared)
+            {
+                phaseCorrection += Mathf.Sin(neighbor.phase - this.phase);
+                validNeighbors++;
+            }
         }
 
         if (validNeighbors > 0)
@@ -75,16 +79,14 @@ public class Firefly : MonoBehaviour
         if (meshRenderer != null)
         {
             currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * Time.deltaTime);
-            
+
             if (propBlock == null)
             {
                 propBlock = new MaterialPropertyBlock();
             }
-            
-            meshRenderer.GetPropertyBlock(propBlock);
+            meshRenderer.GetPropertyBlock(propBlock, glowMaterialIndex);
             propBlock.SetColor("_EmissionColor", currentColor);
-            meshRenderer.SetPropertyBlock(propBlock);
+            meshRenderer.SetPropertyBlock(propBlock, glowMaterialIndex);
         }
     }
-
 }
