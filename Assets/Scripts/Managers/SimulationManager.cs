@@ -42,6 +42,7 @@ public class SimulationManager : MonoBehaviour
             foreach (var firefly in allFireflies)
             {
                 firefly.UpdatePhaseAndVisuals();
+                firefly.MoveOrganically();
             }
         }
         
