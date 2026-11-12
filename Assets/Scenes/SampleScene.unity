@@ -645,8 +645,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireflySpawner
   fireflyPrefab: {fileID: 5644159355279596319, guid: dbb9bfe47d5b48b7da35331d1f8aa777, type: 3}
-  populationSize: 100
-  spawnRadius: 10
+  populationSize: 1000
+  spawnRadius: 100
 --- !u!114 &826844676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -659,8 +659,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aafbb6ca419345aca7ae5e00bb61f7d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimulationManager
-  couplingStrenghth: 2
-  visionRadius: 2
+  couplingStrenghth: 10
+  visionRadius: 10
   allFireflies: []
 --- !u!1 &912033497
 GameObject:

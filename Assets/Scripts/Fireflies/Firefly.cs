@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Firefly : MonoBehaviour
 {
@@ -12,21 +14,24 @@ public class Firefly : MonoBehaviour
     public float flashIntensity = 4.0f;
     public float fadeSpeed = 3.0f;
     
-    private Material fireflyMaterial;
+    private static MaterialPropertyBlock propBlock;
+    private Renderer meshRenderer;
     private Color currentColor;
     private float phaseCorrection = 0f;
+
+    private void Awake()
+    {
+        meshRenderer =  GetComponent<Renderer>();
+        if (propBlock != null)
+        {
+            propBlock = new MaterialPropertyBlock();
+        }
+    }
 
     void Start()
     {
         phase = Random.Range(0f, 2f * Mathf.PI);
         naturalFrequency = Random.Range(0.9f, 1.1f);
-        
-        Renderer renderer =  GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            fireflyMaterial = renderer.material;
-            fireflyMaterial.EnableKeyword("_EMISSION");
-        }
         
         currentColor = Color.black;
     }
@@ -38,12 +43,13 @@ public class Firefly : MonoBehaviour
 
         float k = SimulationManager.instance.couplingStrenghth;
         float radius = SimulationManager.instance.visionRadius;
+        float readiusQuared = radius * radius;
 
         foreach (Firefly neighbor in neighbors)
         {
            if (neighbor == this) continue;
 
-           if (Vector3.Distance(transform.position, neighbor.transform.position) <= radius)
+           if ((transform.position - neighbor.transform.position).sqrMagnitude <= readiusQuared)
            {
                phaseCorrection += Mathf.Sin(neighbor.phase - this.phase);
                validNeighbors++;
@@ -66,10 +72,18 @@ public class Firefly : MonoBehaviour
             phase -= 2f * Mathf.PI;
         }
 
-        if (fireflyMaterial != null)
+        if (meshRenderer != null)
         {
             currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * Time.deltaTime);
-            fireflyMaterial.SetColor("_EmissionColor", currentColor);
+            
+            if (propBlock == null)
+            {
+                propBlock = new MaterialPropertyBlock();
+            }
+            
+            meshRenderer.GetPropertyBlock(propBlock);
+            propBlock.SetColor("_EmissionColor", currentColor);
+            meshRenderer.SetPropertyBlock(propBlock);
         }
     }
 
