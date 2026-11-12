@@ -5,10 +5,11 @@ using Random = UnityEngine.Random;
 
 public class Firefly : MonoBehaviour
 {
-    [Header("Clock Parameters")] public float phase = 0f;
+    [Header("Clock Parameters")]
+    public float phase = 0f;
     public float naturalFrequency;
 
-    [Header("Visuals (Fading and Bloom")]
+    [Header("Visuals (Fading and Bloom)")]
     public Color flashColor = new Color(0.6f, 1.0f, 0.2f, 1f);
 
     public float flashIntensity = 4.0f;
@@ -18,6 +19,10 @@ public class Firefly : MonoBehaviour
     public float moveSpeed = 2.0f;
     public float wanderStrength = 0.5f;
     
+
+    [Tooltip("Numer slotu w Mesh Renderer, na kt�rym jest ��ty materia�")]
+    public int glowMaterialIndex = 0;
+
     private static MaterialPropertyBlock propBlock;
     private Renderer meshRenderer;
     private Color currentColor;
@@ -27,7 +32,8 @@ public class Firefly : MonoBehaviour
 
     private void Awake()
     {
-        meshRenderer =  GetComponent<Renderer>();
+        meshRenderer = GetComponentInChildren<Renderer>();
+
         if (propBlock == null)
         {
             propBlock = new MaterialPropertyBlock();
@@ -88,10 +94,9 @@ public class Firefly : MonoBehaviour
             {
                 propBlock = new MaterialPropertyBlock();
             }
-            
-            meshRenderer.GetPropertyBlock(propBlock);
+            meshRenderer.GetPropertyBlock(propBlock, glowMaterialIndex);
             propBlock.SetColor("_EmissionColor", currentColor);
-            meshRenderer.SetPropertyBlock(propBlock);
+            meshRenderer.SetPropertyBlock(propBlock, glowMaterialIndex);
         }
     }
     
