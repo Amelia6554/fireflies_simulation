@@ -1,114 +1,139 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 public class Firefly : MonoBehaviour
 {
-    [Header("Clock Parameters")]
-    public float phase = 0f;
-    public float naturalFrequency;
+    [Header("State")]
+    public float phase;
 
-    [Header("Visuals (Fading and Bloom)")]
-    public Color flashColor = new Color(0.6f, 1.0f, 0.2f, 1f);
-
-    public float flashIntensity = 4.0f;
-    public float fadeSpeed = 3.0f;
-    
-    [Header("Movement")]
-    public float moveSpeed = 2.0f;
-    public float wanderStrength = 0.5f;
-    
-
-    [Tooltip("Numer slotu w Mesh Renderer, na kt�rym jest ��ty materia�")]
+    [Header("Visual Setup")]
+    [Tooltip("Numer slotu w Mesh Renderer, na którym jest materiał emisyjny")]
     public int glowMaterialIndex = 0;
 
+    private const float TwoPi = 2f * Mathf.PI;
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
     private static MaterialPropertyBlock propBlock;
+
     private Renderer meshRenderer;
-    private Color currentColor;
-    private float phaseCorrection = 0f;
-    
+    private Color currentColor = Color.black;
+    private float frequencyNoise; 
+    private float phaseCorrection;
     private Vector3 randomOffset;
 
     private void Awake()
     {
         meshRenderer = GetComponentInChildren<Renderer>();
-
         if (propBlock == null)
         {
             propBlock = new MaterialPropertyBlock();
         }
     }
 
-    void Start()
+    private void Start()
     {
-        phase = Random.Range(0f, 2f * Mathf.PI);
-        naturalFrequency = Random.Range(0.9f, 1.1f);
-        
-        currentColor = Color.black;
-        
-        randomOffset = new Vector3(Random.Range(0f, 100f), Random.Range(0f, 100f), Random.Range(0f, 100f));
+        RandomizePhase();
+        frequencyNoise = Random.Range(-1f, 1f);
+        randomOffset = new Vector3(
+            Random.Range(0f, 100f),
+            Random.Range(0f, 100f),
+            Random.Range(0f, 100f)
+        );
     }
 
-    public void CalculateKuramoto(List<Firefly> neighbors)
+    public void RandomizePhase()
+    {
+        phase = Random.Range(0f, TwoPi);
+        currentColor = Color.black;
+        phaseCorrection = 0f;
+    }
+
+    public void CalculateKuramoto(List<Firefly> neighbors, float couplingStrength, float visionRadiusSqr)
     {
         phaseCorrection = 0f;
         int validNeighbors = 0;
+        Vector3 myPos = transform.position;
 
-        float k = SimulationManager.instance.couplingStrenghth;
-        float radius = SimulationManager.instance.visionRadius;
-        float readiusQuared = radius * radius;
-
-        foreach (Firefly neighbor in neighbors)
+        for (int i = 0; i < neighbors.Count; i++)
         {
-           if (neighbor == this) continue;
+            Firefly neighbor = neighbors[i];
+            if (neighbor == this) continue;
 
-           if ((transform.position - neighbor.transform.position).sqrMagnitude <= readiusQuared)
-           {
-               phaseCorrection += Mathf.Sin(neighbor.phase - this.phase);
-               validNeighbors++;
-           }
+            if ((myPos - neighbor.transform.position).sqrMagnitude <= visionRadiusSqr)
+            {
+                phaseCorrection += Mathf.Sin(neighbor.phase - phase);
+                validNeighbors++;
+            }
         }
 
         if (validNeighbors > 0)
         {
-            phaseCorrection = (k / validNeighbors) * phaseCorrection;
+            phaseCorrection = (couplingStrength / validNeighbors) * phaseCorrection;
         }
     }
 
-    public void UpdatePhaseAndVisuals()
+    public void UpdatePhaseAndVisuals(
+        float dt,
+        float baseFrequency,
+        float frequencySpread,
+        Color flashColor,
+        float flashIntensity,
+        float fadeSpeed)
     {
-        phase += (naturalFrequency + phaseCorrection) * Time.deltaTime;
+        float naturalFrequency = Mathf.Max(0.05f, baseFrequency + frequencyNoise * frequencySpread);
+        phase += (naturalFrequency + phaseCorrection) * dt;
 
-        if (phase >= 2f * Mathf.PI)
+        if (phase >= TwoPi)
         {
             currentColor = flashColor * flashIntensity;
-            phase -= 2f * Mathf.PI;
+            phase %= TwoPi;
+        }
+        else if (phase < 0f)
+        {
+            phase = (phase % TwoPi) + TwoPi;
         }
 
         if (meshRenderer != null)
         {
-            currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * Time.deltaTime);
-            
-            if (propBlock == null)
-            {
-                propBlock = new MaterialPropertyBlock();
-            }
+            currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * dt);
+
             meshRenderer.GetPropertyBlock(propBlock, glowMaterialIndex);
-            propBlock.SetColor("_EmissionColor", currentColor);
+            propBlock.SetColor(EmissionColorId, currentColor);
             meshRenderer.SetPropertyBlock(propBlock, glowMaterialIndex);
         }
     }
-    
-    public void MoveOrganically()
+
+    public void MoveOrganically(
+        float dt,
+        float simTime,
+        float moveSpeed,
+        float wanderStrength,
+        Vector3 boundsCenter,
+        float boundsRadius)
     {
-        float noiseX = Mathf.PerlinNoise(Time.time * wanderStrength + randomOffset.x, 0f) * 2f - 1f;
-        float noiseY = Mathf.PerlinNoise(Time.time * wanderStrength + randomOffset.y, 0f) * 2f - 1f;
-        float noiseZ = Mathf.PerlinNoise(Time.time * wanderStrength + randomOffset.z, 0f) * 2f - 1f;
+        if (moveSpeed <= 0f) return;
 
-        Vector3 wanderDirection = new Vector3(noiseX, noiseY, noiseZ).normalized;
-        
-        transform.position += wanderDirection * (moveSpeed * Time.deltaTime);
+        float t = simTime * wanderStrength;
+        float noiseX = Mathf.PerlinNoise(t + randomOffset.x, 0f) * 2f - 1f;
+        float noiseY = Mathf.PerlinNoise(t + randomOffset.y, 0f) * 2f - 1f;
+        float noiseZ = Mathf.PerlinNoise(t + randomOffset.z, 0f) * 2f - 1f;
+
+        Vector3 direction = new Vector3(noiseX, noiseY, noiseZ);
+
+        // Miękkie zawracanie, gdy świetlik oddali się poza promień symulacji
+        Vector3 toCenter = boundsCenter - transform.position;
+        float distSqr = toCenter.sqrMagnitude;
+        float radiusSqr = boundsRadius * boundsRadius;
+
+        if (distSqr > radiusSqr)
+        {
+            float overshoot = Mathf.Sqrt(distSqr) - boundsRadius;
+            direction += toCenter.normalized * (overshoot * 0.5f);
+        }
+
+        if (direction.sqrMagnitude > 0.0001f)
+        {
+            direction.Normalize();
+            transform.position += direction * (moveSpeed * dt);
+        }
     }
-
 }

@@ -1,25 +1,37 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class FreeCamera : MonoBehaviour
 {
-    [Header("Base Settings")] public float moveSpeed = 20f;
+    [Header("Base Settings")]
+    public float moveSpeed = 20f;
     public float lookSpeed = 0.2f;
+    public bool requireRightMouseToLook = true;
 
-    [Header("Smoothing")] public float moveSmoothness = 5f;
+    [Header("Smoothing")]
+    public float moveSmoothness = 5f;
     public float lookSmoothness = 10f;
 
-    [Header("State")] public bool isLocked = false;
+    [Header("State")]
+    public bool isLocked = false;
 
-    private float targetRotationX = 0f;
-    private float targetRotationY = 0f;
-    private float currentRotationX = 0f;
-    private float currentRotationY = 0f;
+    private float targetRotationX;
+    private float targetRotationY;
+    private float currentRotationX;
+    private float currentRotationY;
 
-    private Vector3 targetVelocity = Vector3.zero;
-    private Vector3 currentVelocity = Vector3.zero;
+    private Vector3 targetVelocity;
+    private Vector3 currentVelocity;
 
-    void Update()
+    private void Start()
+    {
+        Vector3 angles = transform.localEulerAngles;
+        targetRotationX = currentRotationX = angles.x > 180f ? angles.x - 360f : angles.x;
+        targetRotationY = currentRotationY = angles.y;
+    }
+
+    private void Update()
     {
         if (Mouse.current == null || Keyboard.current == null) return;
 
@@ -28,21 +40,19 @@ public class FreeCamera : MonoBehaviour
             isLocked = !isLocked;
         }
 
-        if (!isLocked)
+        bool pointerOverUI = EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+        bool wantsToLook = !isLocked && (!requireRightMouseToLook || Mouse.current.rightButton.isPressed);
+
+        if (wantsToLook && !pointerOverUI)
         {
             Vector2 mouseDelta = Mouse.current.delta.ReadValue();
             targetRotationY += mouseDelta.x * lookSpeed;
-            targetRotationX -= mouseDelta.y * lookSpeed;
-            targetRotationX = Mathf.Clamp(targetRotationX, -90f, 90f);
+            targetRotationX = Mathf.Clamp(targetRotationX - mouseDelta.y * lookSpeed, -90f, 90f);
+        }
 
-            currentRotationX = Mathf.Lerp(currentRotationX, targetRotationX, lookSmoothness * Time.deltaTime);
-            currentRotationY = Mathf.Lerp(currentRotationY, targetRotationY, lookSmoothness * Time.deltaTime);
-
-            transform.localRotation = Quaternion.Euler(currentRotationX, currentRotationY, 0f);
-
-            float moveX = 0f;
-            float moveZ = 0f;
-            float moveY = 0f;
+        if (!isLocked)
+        {
+            float moveX = 0f, moveY = 0f, moveZ = 0f;
 
             if (Keyboard.current.wKey.isPressed) moveZ = 1f;
             if (Keyboard.current.sKey.isPressed) moveZ = -1f;
@@ -52,8 +62,7 @@ public class FreeCamera : MonoBehaviour
             if (Keyboard.current.qKey.isPressed) moveY = -1f;
 
             Vector3 inputDirection = transform.right * moveX + transform.up * moveY + transform.forward * moveZ;
-
-            if (inputDirection.magnitude > 1f) inputDirection.Normalize();
+            if (inputDirection.sqrMagnitude > 1f) inputDirection.Normalize();
 
             targetVelocity = inputDirection * moveSpeed;
         }

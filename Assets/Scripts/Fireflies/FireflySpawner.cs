@@ -1,29 +1,61 @@
 using UnityEngine;
-using System.Collections.Generic;
 
 public class FireflySpawner : MonoBehaviour
+{
+    [Header("Spawner Setup")]
+    public GameObject fireflyPrefab;
+    public Transform fireflyContainer;
+
+    private void Start()
     {
-        [Header("Population Parameters")]
-        public GameObject fireflyPrefab;
-
-        public int populationSize = 100;
-        public float spawnRadius = 10f;
-
-        void Start()
+        if (fireflyContainer == null)
         {
-            SpawnFireflies();
+            fireflyContainer = transform;
         }
 
-        void SpawnFireflies()
+        if (SimulationManager.Instance != null)
         {
-            for (int i = 0; i < populationSize; i++)
-            {
-                Vector3 randomPosition = transform.position + Random.insideUnitSphere * spawnRadius;
-                
-                GameObject newFirefly = Instantiate(fireflyPrefab, randomPosition, Quaternion.identity);
-                newFirefly.name = "Firefly_" + i;
+            SyncPopulation(SimulationManager.Instance.populationSize);
+        }
+    }
 
-                SimulationManager.instance.allFireflies.Add(newFirefly.GetComponent<Firefly>());
+    public void SyncPopulation(int targetCount)
+    {
+        if (fireflyPrefab == null || SimulationManager.Instance == null) return;
+
+        var list = SimulationManager.Instance.allFireflies;
+        float radius = SimulationManager.Instance.boundsRadius;
+
+        // Dospawnowanie brakuj¹cych
+        while (list.Count < targetCount)
+        {
+            Vector3 randomPosition = transform.position + Random.insideUnitSphere * radius;
+            GameObject newObj = Instantiate(fireflyPrefab, randomPosition, Quaternion.identity, fireflyContainer);
+            newObj.name = $"Firefly_{list.Count}";
+
+            if (newObj.TryGetComponent(out Firefly firefly))
+            {
+                list.Add(firefly);
+            }
+            else
+            {
+                Destroy(newObj);
+                Debug.LogError("Prefab œwietlika nie ma komponentu Firefly!");
+                break;
+            }
+        }
+
+        // Usuniêcie nadmiarowych
+        while (list.Count > targetCount)
+        {
+            int lastIndex = list.Count - 1;
+            Firefly toRemove = list[lastIndex];
+            list.RemoveAt(lastIndex);
+
+            if (toRemove != null)
+            {
+                Destroy(toRemove.gameObject);
             }
         }
     }
+}
