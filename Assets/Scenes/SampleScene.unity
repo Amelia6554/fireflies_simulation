@@ -167,12 +167,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -215,6 +215,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 912033498}
+  - {fileID: 1539902650}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -375,6 +376,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Camera
   moveSpeed: 20
   lookSpeed: 2
+  requireRightMouseToLook: 1
   moveSmoothness: 5
   lookSmoothness: 10
   isLocked: 0
@@ -535,6 +537,7 @@ GameObject:
   - component: {fileID: 826844674}
   - component: {fileID: 826844676}
   - component: {fileID: 826844675}
+  - component: {fileID: 826844677}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -597,8 +600,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireflySpawner
   fireflyPrefab: {fileID: 5644159355279596319, guid: dbb9bfe47d5b48b7da35331d1f8aa777, type: 3}
-  populationSize: 1000
-  spawnRadius: 100
+  fireflyContainer: {fileID: 0}
 --- !u!114 &826844676
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -611,9 +613,77 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aafbb6ca419345aca7ae5e00bb61f7d1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SimulationManager
-  couplingStrenghth: 10
+  spawner: {fileID: 0}
+  couplingStrength: 2
   visionRadius: 10
-  allFireflies: []
+  baseFrequency: 1.5
+  frequencySpread: 0.2
+  populationSize: 100
+  boundsRadius: 10
+  moveSpeed: 2
+  wanderStrength: 0.5
+  flashColor: {r: 0.6, g: 1, b: 0.2, a: 1}
+  flashIntensity: 4
+  fadeSpeed: 3
+  simulationSpeed: 1
+  isPaused: 0
+--- !u!114 &826844677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 826844671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f79f68658d3eb94ab71c86528090631, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SimulationUI
+  panelRoot: {fileID: 0}
+  togglePanelButton: {fileID: 0}
+  togglePanelButtonText: {fileID: 0}
+  couplingSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  visionRadiusSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  baseFrequencySlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  frequencySpreadSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  populationSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  boundsRadiusSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  moveSpeedSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  wanderStrengthSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  simSpeedSlider:
+    slider: {fileID: 0}
+    valueText: {fileID: 0}
+    format: 
+  pauseButton: {fileID: 0}
+  pauseButtonText: {fileID: 0}
+  randomizePhasesButton: {fileID: 0}
+  resetDefaultsButton: {fileID: 0}
+  orderParameterText: {fileID: 0}
+  orderParameterBar: {fileID: 0}
 --- !u!1 &912033497
 GameObject:
   m_ObjectHideFlags: 0
@@ -830,6 +900,81 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1539902649
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1539902650}
+  - component: {fileID: 1539902652}
+  - component: {fileID: 1539902651}
+  m_Layer: 5
+  m_Name: ControlPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1539902650
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1539902649}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 220125242}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1539902651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1539902649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1539902652
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1539902649}
+  m_CullTransparentMesh: 1
 --- !u!1 &1935172258
 GameObject:
   m_ObjectHideFlags: 0
