@@ -3488,7 +3488,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc2a925b9ab64f2f9041bc9edf42f05e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FireflySpawner
-  fireflyPrefab: {fileID: 5644159355279596319, guid: dbb9bfe47d5b48b7da35331d1f8aa777, type: 3}
+  fireflyPrefab: {fileID: 5644159355279596319, guid: eddf5db1f31af44159e197c2784ea02c, type: 3}
   fireflyContainer: {fileID: 826844673}
 --- !u!114 &826844676
 MonoBehaviour:
@@ -3514,6 +3514,12 @@ MonoBehaviour:
   flashColor: {r: 1, g: 0.9176515, b: 0.19999999, a: 1}
   flashIntensity: 4
   fadeSpeed: 3
+  useInstancedRendering: 1
+  useLod: 1
+  lodDistance: 50
+  maxHighDetailCount: 500
+  meshOverride: {fileID: 0}
+  overrideScale: {x: 0.3, y: 0.3, z: 0.3}
   simulationSpeed: 1
   isPaused: 0
 --- !u!114 &826844677

@@ -26,7 +26,6 @@ public class FireflySpawner : MonoBehaviour
         var list = SimulationManager.Instance.allFireflies;
         float radius = SimulationManager.Instance.boundsRadius;
 
-        // Dospawnowanie brakuj¹cych
         while (list.Count < targetCount)
         {
             Vector3 randomPosition = transform.position + Random.insideUnitSphere * radius;
@@ -35,17 +34,17 @@ public class FireflySpawner : MonoBehaviour
 
             if (newObj.TryGetComponent(out Firefly firefly))
             {
+                firefly.cachedPos = randomPosition;
                 list.Add(firefly);
             }
             else
             {
                 Destroy(newObj);
-                Debug.LogError("Prefab œwietlika nie ma komponentu Firefly!");
+                Debug.LogError("Firefly prefab has no Firefly component!");
                 break;
             }
         }
 
-        // Usuniêcie nadmiarowych
         while (list.Count > targetCount)
         {
             int lastIndex = list.Count - 1;

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Firefly : MonoBehaviour
 {
@@ -7,7 +8,7 @@ public class Firefly : MonoBehaviour
     public float phase;
 
     [Header("Visual Setup")]
-    [Tooltip("Numer slotu w Mesh Renderer, na którym jest materiał emisyjny")]
+    [Tooltip("Index of the material slot in the Mesh Renderer that has the emissive material")]
     public int glowMaterialIndex = 0;
 
     private const float TwoPi = 2f * Mathf.PI;
@@ -15,18 +16,37 @@ public class Firefly : MonoBehaviour
     private static MaterialPropertyBlock propBlock;
 
     private Renderer meshRenderer;
+    private Renderer[] allRenderers;
     private Color currentColor = Color.black;
-    private float frequencyNoise; 
+    private float frequencyNoise;
     private float phaseCorrection;
     private Vector3 randomOffset;
 
+    private bool ownRendering = true;
+    private bool wasDark = false;
+
+    [System.NonSerialized] public float sinPhase;
+    [System.NonSerialized] public float cosPhase;
+    [System.NonSerialized] public Vector3 cachedPos;
+
+    public Color CurrentColor => currentColor;
+
     private void Awake()
     {
-        meshRenderer = GetComponentInChildren<Renderer>();
+        allRenderers = GetComponentsInChildren<Renderer>(true);
+        meshRenderer = allRenderers.Length > 0 ? allRenderers[0] : null;
+        for (int i = 0; i < allRenderers.Length; i++)
+        {
+            allRenderers[i].shadowCastingMode = ShadowCastingMode.Off;
+            allRenderers[i].receiveShadows = false;
+        }
+
         if (propBlock == null)
         {
             propBlock = new MaterialPropertyBlock();
         }
+
+        cachedPos = transform.position;
     }
 
     private void Start()
@@ -45,30 +65,56 @@ public class Firefly : MonoBehaviour
         phase = Random.Range(0f, TwoPi);
         currentColor = Color.black;
         phaseCorrection = 0f;
+        wasDark = false;
+    }
+
+    public void SetOwnRendering(bool on)
+    {
+        if (ownRendering == on) return;
+        ownRendering = on;
+        for (int i = 0; i < allRenderers.Length; i++)
+        {
+            allRenderers[i].enabled = on;
+        }
+
+        if (on) transform.position = cachedPos;
+        wasDark = false;
+    }
+
+    public void CacheState()
+    {
+        sinPhase = Mathf.Sin(phase);
+        cosPhase = Mathf.Cos(phase);
+        if (ownRendering) cachedPos = transform.position;
     }
 
     public void CalculateKuramoto(List<Firefly> neighbors, float couplingStrength, float visionRadiusSqr)
     {
-        phaseCorrection = 0f;
+        float sumSin = 0f;
+        float sumCos = 0f;
         int validNeighbors = 0;
-        Vector3 myPos = transform.position;
 
         for (int i = 0; i < neighbors.Count; i++)
         {
-            Firefly neighbor = neighbors[i];
-            if (neighbor == this) continue;
+            Firefly other = neighbors[i];
+            if (other == this) continue;
 
-            if ((myPos - neighbor.transform.position).sqrMagnitude <= visionRadiusSqr)
+            if ((cachedPos - other.cachedPos).sqrMagnitude <= visionRadiusSqr)
             {
-                phaseCorrection += Mathf.Sin(neighbor.phase - phase);
+                sumSin += other.sinPhase;
+                sumCos += other.cosPhase;
                 validNeighbors++;
             }
         }
 
-        if (validNeighbors > 0)
-        {
-            phaseCorrection = (couplingStrength / validNeighbors) * phaseCorrection;
-        }
+        phaseCorrection = validNeighbors > 0
+            ? (couplingStrength / validNeighbors) * (sumSin * cosPhase - sumCos * sinPhase)
+            : 0f;
+    }
+
+    public void SetPhaseCorrection(float value)
+    {
+        phaseCorrection = value;
     }
 
     public void UpdatePhaseAndVisuals(
@@ -92,14 +138,18 @@ public class Firefly : MonoBehaviour
             phase = (phase % TwoPi) + TwoPi;
         }
 
-        if (meshRenderer != null)
-        {
-            currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * dt);
+        currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * dt);
+        bool dark = currentColor.maxColorComponent < 0.002f;
+        if (dark) currentColor = Color.black;
 
+        if (ownRendering && meshRenderer != null && !(dark && wasDark))
+        {
             meshRenderer.GetPropertyBlock(propBlock, glowMaterialIndex);
             propBlock.SetColor(EmissionColorId, currentColor);
             meshRenderer.SetPropertyBlock(propBlock, glowMaterialIndex);
         }
+
+        wasDark = dark;
     }
 
     public void MoveOrganically(
@@ -119,8 +169,7 @@ public class Firefly : MonoBehaviour
 
         Vector3 direction = new Vector3(noiseX, noiseY, noiseZ);
 
-        // Miękkie zawracanie, gdy świetlik oddali się poza promień symulacji
-        Vector3 toCenter = boundsCenter - transform.position;
+        Vector3 toCenter = boundsCenter - cachedPos;
         float distSqr = toCenter.sqrMagnitude;
         float radiusSqr = boundsRadius * boundsRadius;
 
@@ -133,7 +182,8 @@ public class Firefly : MonoBehaviour
         if (direction.sqrMagnitude > 0.0001f)
         {
             direction.Normalize();
-            transform.position += direction * (moveSpeed * dt);
+            cachedPos += direction * (moveSpeed * dt);
+            if (ownRendering) transform.position = cachedPos;
         }
     }
 }
