@@ -14,7 +14,7 @@ public class SimulationManager : MonoBehaviour
     public const float MinFrequencySpread = 0f, MaxFrequencySpread = 1.5f;
     public const float MinMoveSpeed = 0f, MaxMoveSpeed = 10f;
     public const float MinWanderStrength = 0f, MaxWanderStrength = 3f;
-    public const float MinBoundsRadius = 2f, MaxBoundsRadius = 30f;
+    public const float MinBoundsRadius = 2f, MaxBoundsRadius = 50f;
     public const float MinSimSpeed = 0f, MaxSimSpeed = 3f;
 
     [Header("References")]
@@ -190,9 +190,26 @@ public class SimulationManager : MonoBehaviour
     public void SetFrequencySpread(float value) => frequencySpread = Mathf.Clamp(value, MinFrequencySpread, MaxFrequencySpread);
     public void SetMoveSpeed(float value) => moveSpeed = Mathf.Clamp(value, MinMoveSpeed, MaxMoveSpeed);
     public void SetWanderStrength(float value) => wanderStrength = Mathf.Clamp(value, MinWanderStrength, MaxWanderStrength);
-    public void SetBoundsRadius(float value) => boundsRadius = Mathf.Clamp(value, MinBoundsRadius, MaxBoundsRadius);
     public void SetSimulationSpeed(float value) => simulationSpeed = Mathf.Clamp(value, MinSimSpeed, MaxSimSpeed);
 
+    public void SetBoundsRadius(float value)
+    {
+        float newRadius = Mathf.Clamp(value, MinBoundsRadius, MaxBoundsRadius);
+        float oldRadius = boundsRadius;
+        boundsRadius = newRadius;
+
+        if (oldRadius > 0.001f && !Mathf.Approximately(oldRadius, newRadius))
+        {
+            float scale = newRadius / oldRadius;
+            Vector3 center = spawner != null ? spawner.transform.position : transform.position;
+
+            for (int i = 0; i < allFireflies.Count; i++)
+            {
+                Vector3 offset = allFireflies[i].transform.position - center;
+                allFireflies[i].transform.position = center + offset * scale;
+            }
+        }
+    }
     public void SetPopulationSize(float value)
     {
         int clamped = Mathf.Clamp(Mathf.RoundToInt(value), MinPopulation, MaxPopulation);
@@ -228,7 +245,7 @@ public class SimulationManager : MonoBehaviour
         frequencySpread = 0.2f;
         moveSpeed = 2.0f;
         wanderStrength = 0.5f;
-        boundsRadius = 10f;
+        SetBoundsRadius(10.0f);
         simulationSpeed = 1.0f;
         isPaused = false;
 
