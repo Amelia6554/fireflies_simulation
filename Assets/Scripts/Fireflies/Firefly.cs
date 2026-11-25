@@ -88,30 +88,6 @@ public class Firefly : MonoBehaviour
         if (ownRendering) cachedPos = transform.position;
     }
 
-    public void CalculateKuramoto(List<Firefly> neighbors, float couplingStrength, float visionRadiusSqr)
-    {
-        float sumSin = 0f;
-        float sumCos = 0f;
-        int validNeighbors = 0;
-
-        for (int i = 0; i < neighbors.Count; i++)
-        {
-            Firefly other = neighbors[i];
-            if (other == this) continue;
-
-            if ((cachedPos - other.cachedPos).sqrMagnitude <= visionRadiusSqr)
-            {
-                sumSin += other.sinPhase;
-                sumCos += other.cosPhase;
-                validNeighbors++;
-            }
-        }
-
-        phaseCorrection = validNeighbors > 0
-            ? (couplingStrength / validNeighbors) * (sumSin * cosPhase - sumCos * sinPhase)
-            : 0f;
-    }
-
     public void SetPhaseCorrection(float value)
     {
         phaseCorrection = value;
@@ -135,7 +111,7 @@ public class Firefly : MonoBehaviour
         }
         else if (phase < 0f)
         {
-            phase = (phase % TwoPi) + TwoPi;
+            phase = TwoPi + (phase % TwoPi);
         }
 
         currentColor = Color.Lerp(currentColor, Color.black, fadeSpeed * dt);
@@ -162,21 +138,26 @@ public class Firefly : MonoBehaviour
     {
         if (moveSpeed <= 0f) return;
 
-        float t = simTime * wanderStrength;
-        float noiseX = Mathf.PerlinNoise(t + randomOffset.x, 0f) * 2f - 1f;
-        float noiseY = Mathf.PerlinNoise(t + randomOffset.y, 0f) * 2f - 1f;
-        float noiseZ = Mathf.PerlinNoise(t + randomOffset.z, 0f) * 2f - 1f;
+        float t1 = simTime * wanderStrength;
+        float t2 = simTime * wanderStrength * 2.3f;
+
+        float noiseX = (Mathf.PerlinNoise(t1 + randomOffset.x, randomOffset.y) * 2f - 1f)
+                       + 0.5f * (Mathf.PerlinNoise(t2 + randomOffset.y, randomOffset.z) * 2f - 1f);
+        float noiseY = (Mathf.PerlinNoise(t1 + randomOffset.y, randomOffset.z) * 2f - 1f)
+                       + 0.5f * (Mathf.PerlinNoise(t2 + randomOffset.z, randomOffset.x) * 2f - 1f);
+        float noiseZ = (Mathf.PerlinNoise(t1 + randomOffset.z, randomOffset.x) * 2f - 1f)
+                       + 0.5f * (Mathf.PerlinNoise(t2 + randomOffset.x, randomOffset.y) * 2f - 1f);
 
         Vector3 direction = new Vector3(noiseX, noiseY, noiseZ);
 
         Vector3 toCenter = boundsCenter - cachedPos;
-        float distSqr = toCenter.sqrMagnitude;
-        float radiusSqr = boundsRadius * boundsRadius;
+        float dist = toCenter.magnitude;
+        float softStart = boundsRadius * 0.7f;
 
-        if (distSqr > radiusSqr)
+        if (dist > softStart && dist > 0.001f)
         {
-            float overshoot = Mathf.Sqrt(distSqr) - boundsRadius;
-            direction += toCenter.normalized * (overshoot * 0.5f);
+            float pullStrength = ((dist - softStart) / (boundsRadius - softStart)) * 2.5f;
+            direction += (toCenter / dist) * pullStrength;
         }
 
         if (direction.sqrMagnitude > 0.0001f)
