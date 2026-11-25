@@ -4,6 +4,21 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+[Serializable]
+public struct SimulationPreset
+{
+    public string presetName;
+    [Range(SimulationManager.MinCoupling, SimulationManager.MaxCoupling)] public float couplingStrength;
+    [Range(SimulationManager.MinVisionRadius, SimulationManager.MaxVisionRadius)] public float visionRadius;
+    [Range(SimulationManager.MinBaseFrequency, SimulationManager.MaxBaseFrequency)] public float baseFrequency;
+    [Range(SimulationManager.MinFrequencySpread, SimulationManager.MaxFrequencySpread)] public float frequencySpread;
+    [Range(SimulationManager.MinPopulation, SimulationManager.MaxPopulation)] public int populationSize;
+    [Range(SimulationManager.MinBoundsRadius, SimulationManager.MaxBoundsRadius)] public float boundsRadius;
+    [Range(SimulationManager.MinMoveSpeed, SimulationManager.MaxMoveSpeed)] public float moveSpeed;
+    [Range(SimulationManager.MinSimSpeed, SimulationManager.MaxSimSpeed)] public float simulationSpeed;
+    public bool randomizePhasesOnApply;
+}
+
 public class SimulationManager : MonoBehaviour
 {
     public static SimulationManager Instance { get; private set; }
@@ -19,10 +34,13 @@ public class SimulationManager : MonoBehaviour
     public const float MinSimSpeed = 0f, MaxSimSpeed = 3f;
 
     private const int MaxInstancesPerBatch = 1023;
-    private const int EmissionLevels = 32; 
+    private const int EmissionLevels = 32;
 
     [Header("References")]
     public FireflySpawner spawner;
+
+    [Header("Presets")]
+    public List<SimulationPreset> presets = CreateDefaultPresets();
 
     [Header("Kuramoto Parameters")]
     [Range(MinCoupling, MaxCoupling)] public float couplingStrength = 2.0f;
@@ -64,6 +82,7 @@ public class SimulationManager : MonoBehaviour
     public bool isPaused = false;
 
     public float OrderParameter { get; private set; }
+    public int CurrentPresetIndex { get; private set; } = -1;
     public readonly List<Firefly> allFireflies = new List<Firefly>();
     public event Action OnParametersChanged;
 
@@ -84,8 +103,8 @@ public class SimulationManager : MonoBehaviour
     private class RenderPart
     {
         public Mesh mesh;
-        public Matrix4x4 offset;          
-        public Material[] materials;     
+        public Matrix4x4 offset;
+        public Material[] materials;
         public Material[][] glowMaterials;
     }
 
@@ -109,6 +128,48 @@ public class SimulationManager : MonoBehaviour
     private Color lastFlashColor;
     private float lastFlashIntensity;
 
+    private static List<SimulationPreset> CreateDefaultPresets()
+    {
+        return new List<SimulationPreset>
+        {
+            new SimulationPreset
+            {
+                presetName = "1. Chaos (K = 0)",
+                couplingStrength = 0f, visionRadius = 5f, baseFrequency = 1.5f, frequencySpread = 0.25f,
+                populationSize = 150, boundsRadius = 12f, moveSpeed = 2f, simulationSpeed = 1f,
+                randomizePhasesOnApply = true
+            },
+            new SimulationPreset
+            {
+                presetName = "2. P³ynna synchronizacja",
+                couplingStrength = 3.5f, visionRadius = 8f, baseFrequency = 1.5f, frequencySpread = 0.2f,
+                populationSize = 150, boundsRadius = 12f, moveSpeed = 2f, simulationSpeed = 1f,
+                randomizePhasesOnApply = true
+            },
+            new SimulationPreset
+            {
+                presetName = "3. Lokalne klastry (ma³e R)",
+                couplingStrength = 4.0f, visionRadius = 2.2f, baseFrequency = 1.5f, frequencySpread = 0.15f,
+                populationSize = 250, boundsRadius = 16f, moveSpeed = 0.8f, simulationSpeed = 1f,
+                randomizePhasesOnApply = true
+            },
+            new SimulationPreset
+            {
+                presetName = "4. Globalny b³ysk (du¿e R)",
+                couplingStrength = 5.0f, visionRadius = 22f, baseFrequency = 1.5f, frequencySpread = 0.2f,
+                populationSize = 250, boundsRadius = 14f, moveSpeed = 2f, simulationSpeed = 1f,
+                randomizePhasesOnApply = true
+            },
+            new SimulationPreset
+            {
+                presetName = "5. Du¿y szum Omega",
+                couplingStrength = 2.5f, visionRadius = 8f, baseFrequency = 1.5f, frequencySpread = 1.3f,
+                populationSize = 150, boundsRadius = 12f, moveSpeed = 2f, simulationSpeed = 1f,
+                randomizePhasesOnApply = true
+            }
+        };
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -121,6 +182,11 @@ public class SimulationManager : MonoBehaviour
         if (spawner == null)
         {
             spawner = FindAnyObjectByType<FireflySpawner>();
+        }
+
+        if (presets == null || presets.Count == 0)
+        {
+            presets = CreateDefaultPresets();
         }
     }
 
@@ -700,6 +766,9 @@ public class SimulationManager : MonoBehaviour
         simulationSpeed = Mathf.Clamp(simulationSpeed, MinSimSpeed, MaxSimSpeed);
     }
 
+    // ------------------------------------------------------------------
+    // Public API (UI & Presets)
+    // ------------------------------------------------------------------
 
     public void SetCouplingStrength(float value) => couplingStrength = Mathf.Clamp(value, MinCoupling, MaxCoupling);
     public void SetVisionRadius(float value) => visionRadius = Mathf.Clamp(value, MinVisionRadius, MaxVisionRadius);
@@ -727,6 +796,7 @@ public class SimulationManager : MonoBehaviour
             }
         }
     }
+
     public void SetPopulationSize(float value)
     {
         int clamped = Mathf.Clamp(Mathf.RoundToInt(value), MinPopulation, MaxPopulation);
@@ -737,6 +807,35 @@ public class SimulationManager : MonoBehaviour
         {
             spawner.SyncPopulation(populationSize);
         }
+    }
+
+    public void ClearActivePreset()
+    {
+        CurrentPresetIndex = -1;
+    }
+
+    public void ApplyPreset(int index)
+    {
+        if (presets == null || index < 0 || index >= presets.Count) return;
+
+        SimulationPreset p = presets[index];
+        SetCouplingStrength(p.couplingStrength);
+        SetVisionRadius(p.visionRadius);
+        SetBaseFrequency(p.baseFrequency);
+        SetFrequencySpread(p.frequencySpread);
+        SetBoundsRadius(p.boundsRadius);
+        SetPopulationSize(p.populationSize);
+        SetMoveSpeed(p.moveSpeed);
+        SetSimulationSpeed(p.simulationSpeed);
+        isPaused = false;
+        CurrentPresetIndex = index;
+
+        if (p.randomizePhasesOnApply)
+        {
+            RandomizeAllPhases();
+        }
+
+        OnParametersChanged?.Invoke();
     }
 
     public void TogglePause()
@@ -765,6 +864,7 @@ public class SimulationManager : MonoBehaviour
         SetBoundsRadius(10.0f);
         simulationSpeed = 1.0f;
         isPaused = false;
+        CurrentPresetIndex = -1;
 
         if (spawner != null)
         {

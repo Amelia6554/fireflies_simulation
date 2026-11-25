@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,13 +12,16 @@ public class SimulationUI : MonoBehaviour
     {
         public Slider slider;
         public TMP_Text valueText;
-        public string format; 
+        public string format;
     }
 
     [Header("Panel Visibility")]
     public GameObject panelRoot;
     public Button togglePanelButton;
     public TMP_Text togglePanelButtonText;
+
+    [Header("Presets")]
+    public TMP_Dropdown presetDropdown;
 
     [Header("Kuramoto Sliders")]
     public SliderBinding couplingSlider;
@@ -40,7 +44,7 @@ public class SimulationUI : MonoBehaviour
 
     [Header("Live Telemetry")]
     public TMP_Text orderParameterText;
-    public Slider orderParameterBar; // Pasek postêpu 
+    public Slider orderParameterBar; // Pasek postêpu
 
     private float telemetryTimer;
 
@@ -52,6 +56,26 @@ public class SimulationUI : MonoBehaviour
             Debug.LogError("SimulationUI: Brak SimulationManager na scenie!");
             enabled = false;
             return;
+        }
+
+        // Lista presetów (indeks 0 = tryb w³asny, 1..N = presety z SimulationManager)
+        if (presetDropdown != null)
+        {
+            presetDropdown.ClearOptions();
+            var options = new List<string> { "W³asne / Domyœlne" };
+            for (int i = 0; i < mgr.presets.Count; i++)
+            {
+                options.Add(mgr.presets[i].presetName);
+            }
+
+            presetDropdown.AddOptions(options);
+            presetDropdown.onValueChanged.AddListener(index =>
+            {
+                if (index > 0)
+                {
+                    mgr.ApplyPreset(index - 1);
+                }
+            });
         }
 
         // Konfiguracja suwaków na podstawie limitów z SimulationManager
@@ -134,6 +158,16 @@ public class SimulationUI : MonoBehaviour
             {
                 binding.valueText.text = val.ToString(fmt);
             }
+
+            if (SimulationManager.Instance != null)
+            {
+                SimulationManager.Instance.ClearActivePreset();
+            }
+
+            if (presetDropdown != null)
+            {
+                presetDropdown.SetValueWithoutNotify(0);
+            }
         });
     }
 
@@ -152,6 +186,12 @@ public class SimulationUI : MonoBehaviour
         SetSliderVisual(moveSpeedSlider, mgr.moveSpeed, false);
         SetSliderVisual(wanderStrengthSlider, mgr.wanderStrength, false);
         SetSliderVisual(simSpeedSlider, mgr.simulationSpeed, false);
+
+        if (presetDropdown != null)
+        {
+            int targetIndex = mgr.CurrentPresetIndex >= 0 ? mgr.CurrentPresetIndex + 1 : 0;
+            presetDropdown.SetValueWithoutNotify(targetIndex);
+        }
 
         if (pauseButtonText != null)
         {
